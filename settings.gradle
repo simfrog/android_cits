@@ -1,0 +1,2 @@
+rootProject.name = "android_cits"
+include ':android_its'

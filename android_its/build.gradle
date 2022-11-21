@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+apply plugin: "com.android.application"
+
+//noinspection GroovyAssignabilityCheck
+dependencies {
+    compile  'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
+    compile 'com.google.android.material:material:1.6.0'
+    compile 'androidx.appcompat:appcompat:1.5.1'
+    compile 'androidx.constraintlayout:constraintlayout:2.1.4'
+    compile 'androidx.navigation:navigation-fragment:2.3.0'
+    compile 'androidx.navigation:navigation-ui:2.3.0'
+    compile 'com.google.android.gms:play-services-maps:18.1.0'
+    compile 'com.google.android.gms:play-services-location:19.0.0'
+    compile 'com.android.support:appcompat-v7:+'
+    compile 'com.android.support:multidex:1.0.3'
+
+    compile 'org.ros.rosjava_messages:tf2_msgs:0.4.+'
+    compile 'org.ros.rosjava_messages:geometry_msgs:1.10.+'
+    compile 'org.ros.rosjava_messages:nav_msgs:1.10.+'
+    compile 'org.ros.rosjava_messages:std_msgs:[0.5, 0.6)'
+    compile "org.ros.rosjava_messages:sensor_msgs:[1.12,1.13)"
+    compile "org.ros.rosjava_messages:diagnostic_msgs:[1.12,1.13)"
+    compile 'org.ros.rosjava_bootstrap:message_generation:[0.3, 0.4)'
+    compile 'org.ros.android_core:android_core_components:[0.4,0.5)'
+}
+
+android {
+    defaultConfig {
+        applicationId "org.ros.android.android_cits"
+        minSdkVersion 19
+        targetSdkVersion 32
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
