@@ -22,6 +22,9 @@ The sensor data (GPS, IMU, Magnetic Field) on the phone is published as the ROS 
 #### Main
 ![android_cits_main](https://user-images.githubusercontent.com/31130917/203457054-ea52f957-535a-4d4f-8ecf-d25f7f1871f7.png)
 
+## Incomplete
+* Subscriber
+
 ## Reference
 * android_core (https://github.com/rosjava/android_core)
 * android_sensors_driver (https://github.com/rpng/android_sensors_driver)
