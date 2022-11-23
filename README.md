@@ -4,7 +4,7 @@ Android App for publishing data of phone to a ROS master.
 The sensor data (GPS, IMU, Magnetic Field) on the phone is published as the ROS topic and show the GPS on the Google Map.
 
 ## ROS API
-#### PUBS
+#### Pubs
 * ```/'robot_name'/android/fix``` ([sensor_msgs/NavSatFix](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/NavSatFix.html))  
   Information of GPS - longitude, latitude, elevation
 * ```/'robot_name'/android/imu``` ([sensor_msgs/Imu](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/Imu.html))  
