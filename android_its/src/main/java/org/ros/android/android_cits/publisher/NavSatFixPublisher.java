@@ -60,6 +60,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import org.ros.android.android_cits.subscriber.NavSatFixSubscriber;
 import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.ConnectedNode;
@@ -100,7 +101,8 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     private LatLng mCurrentLatLng;
 
     // View objects and the main activity
-    private TextView tvLocation;
+    private TextView tvPubLocation;
+//    private NavSatFixSubscriber<sensor_msgs.NavSatFix> tvSubLocation;
     private MapFragment mapFragment;
     private String mLastUpdateTime;
     private String robotName;
@@ -116,7 +118,8 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         // Get our textzone
         this.mainAct = mainAct;
         this.robotName = robotName;
-        tvLocation = (TextView) mainAct.findViewById(R.id.titleTextGPS);
+        tvPubLocation = (TextView) mainAct.findViewById(R.id.PubGPS);
+//        tvSubLocation = (TextView) mainAct.findViewById(R.id.SubGPS);
         mapFragment = (MapFragment)mainAct.getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         // Set our clients
@@ -152,7 +155,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         // Else we are good to display
         String lat = String.valueOf(mCurrentLocation.getLatitude());
         String lng = String.valueOf(mCurrentLocation.getLongitude());
-        tvLocation.setText("At Time: " + mLastUpdateTime + "\n" +
+        tvPubLocation.setText("At Time: " + mLastUpdateTime + "\n" +
                 "Latitude: " + lat + "\n" +
                 "Longitude: " + lng + "\n" +
                 "Accuracy: " + mCurrentLocation.getAccuracy() + "\n" +
@@ -168,11 +171,11 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mCurrentLatLng));
 
-        Log.i(TAG, tvLocation.getText().toString().replace("\n", " | "));
+        Log.i(TAG, tvPubLocation.getText().toString().replace("\n", " | "));
     }
 
     private void publishMessages(Publisher publisher, List<Location> locs) {
-        // Check that we have a location
+        // Check that we have a locationf
         if (locs == null || locs.size() < 1)
             return;
         // We are good, lets publish
@@ -221,7 +224,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         startLocationUpdates();
         // Create our publisher
         try {
-            this.publisher = connectedNode.newPublisher( robotName + "/android" + "/fix", "sensor_msgs/NavSatFix");
+            this.publisher = connectedNode.newPublisher( "/phone" + robotName + "/android" + "/fix", "sensor_msgs/NavSatFix");
 //            mLocationCallback = new LocationCallback() {
 //                @Override
 //                public void onLocationResult(LocationResult locationResult) {
