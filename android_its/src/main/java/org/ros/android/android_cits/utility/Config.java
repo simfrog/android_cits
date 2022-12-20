@@ -8,9 +8,8 @@ import android.widget.EditText;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.android_cits.MainActivity;
 import org.ros.android.android_cits.R;
-import org.ros.android.android_cits.publisher.ImuPublisher;
-import org.ros.android.android_cits.publisher.MagneticFieldPublisher;
 import org.ros.android.android_cits.publisher.NavSatFixPublisher;
+import org.ros.android.android_cits.publisher.OrientationPublisher;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -24,27 +23,17 @@ public class Config {
     protected NodeMainExecutor nodeMainExecutor;
 
     protected EditText robot_name;
-    protected CheckBox checkbox_fluid;
-    protected CheckBox checkbox_illuminance;
-    protected CheckBox checkbox_imu;
-    protected CheckBox checkbox_magnetic;
+    protected CheckBox checkbox_orientation;
     protected CheckBox checkbox_navsat;
-    protected CheckBox checkbox_temp;
     protected Button button_config;
 
     protected String old_robot_name;
-    protected boolean old_fluid;
-    protected boolean old_illuminance;
-    protected boolean old_imu;
-    protected boolean old_magnetic;
+    protected boolean old_orientation;
     protected boolean old_navsat;
-    protected boolean old_temp;
 
-    protected ImuPublisher pub_imu;
-    protected MagneticFieldPublisher pub_magnetic;
+    protected OrientationPublisher pub_orientation;
     protected NavSatFixPublisher pub_navsat2;
 
-    //protected LocationManager mLocationManager;
     protected SensorManager mSensorManager;
 
 
@@ -55,8 +44,7 @@ public class Config {
 
         // Load our references
         robot_name = (EditText) mainActivity.findViewById(R.id.robot_name);
-        checkbox_imu = (CheckBox) mainActivity.findViewById(R.id.checkbox_imu);
-        checkbox_magnetic = (CheckBox) mainActivity.findViewById(R.id.checkbox_magnetic);
+        checkbox_orientation = (CheckBox) mainActivity.findViewById(R.id.checkbox_orientation);
         checkbox_navsat = (CheckBox) mainActivity.findViewById(R.id.checkbox_navsat);
         button_config = (Button) mainActivity.findViewById(R.id.config_sensor);
 
@@ -64,7 +52,6 @@ public class Config {
         old_robot_name = robot_name.getText().toString();
 
         // Start the services we need
-        //mLocationManager = (LocationManager) mainActivity.getSystemService(Context.LOCATION_SERVICE);
         mSensorManager = (SensorManager) mainActivity.getSystemService(MainActivity.SENSOR_SERVICE);
     }
 
@@ -89,47 +76,31 @@ public class Config {
 
         // If we have a new name, then we need to redo all publishing nodes
         if(!old_robot_name.equals(robot_name_text)) {
-            nodeMainExecutor.shutdownNodeMain(pub_imu);
-            nodeMainExecutor.shutdownNodeMain(pub_magnetic);
+            nodeMainExecutor.shutdownNodeMain(pub_orientation);
             nodeMainExecutor.shutdownNodeMain(pub_navsat2);
-            old_imu = false;
-            old_magnetic = false;
+            old_orientation = false;
             old_navsat = false;
         }
 
-        // IMU node startup
-        if(checkbox_imu.isChecked() != old_imu && checkbox_imu.isChecked()) {
+        // Orientation node startup
+        if(checkbox_orientation.isChecked() != old_orientation && checkbox_orientation.isChecked()) {
             NodeConfiguration nodeConfiguration3 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration3.setMasterUri(masterURI);
-            nodeConfiguration3.setNodeName("sensors_driver_imu");
-            this.pub_imu = new ImuPublisher(mSensorManager, sensorDelay, robot_name_text);
-            nodeMainExecutor.execute(this.pub_imu, nodeConfiguration3);
+            nodeConfiguration3.setNodeName("orientation_driver" + robot_name_text);
+            this.pub_orientation = new OrientationPublisher(mSensorManager, sensorDelay, robot_name_text);
+            nodeMainExecutor.execute(this.pub_orientation, nodeConfiguration3);
         }
-        // IMU node shutdown
-        else if(checkbox_imu.isChecked() != old_imu) {
-            nodeMainExecutor.shutdownNodeMain(pub_imu);
-            pub_imu = null;
-        }
-
-        // Magnetic node startup
-        if(checkbox_magnetic.isChecked() != old_magnetic && checkbox_magnetic.isChecked()) {
-            NodeConfiguration nodeConfiguration4 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-            nodeConfiguration4.setMasterUri(masterURI);
-            nodeConfiguration4.setNodeName("driver_magnetic_field");
-            this.pub_magnetic = new MagneticFieldPublisher(mSensorManager, sensorDelay, robot_name_text);
-            nodeMainExecutor.execute(this.pub_magnetic, nodeConfiguration4);
-        }
-        // Magnetic node shutdown
-        else if(checkbox_magnetic.isChecked() != old_magnetic) {
-            nodeMainExecutor.shutdownNodeMain(pub_magnetic);
-            pub_magnetic = null;
+        // Orientation node shutdown
+        else if(checkbox_orientation.isChecked() != old_orientation) {
+            nodeMainExecutor.shutdownNodeMain(pub_orientation);
+            pub_orientation = null;
         }
 
         // Navigation satellite node startup
         if(checkbox_navsat.isChecked() != old_navsat && checkbox_navsat.isChecked()) {
             NodeConfiguration nodeConfiguration5 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration5.setMasterUri(masterURI);
-            nodeConfiguration5.setNodeName("driver_navsatfix_publisher");
+            nodeConfiguration5.setNodeName("navsatfix_driver" + robot_name_text);
             this.pub_navsat2 = new NavSatFixPublisher(mainActivity, robot_name_text);
             nodeMainExecutor.execute(this.pub_navsat2, nodeConfiguration5);
         }
@@ -141,8 +112,7 @@ public class Config {
 
         // Finally, update our old states
         old_robot_name = robot_name.getText().toString();
-        old_imu = checkbox_imu.isChecked();
-        old_magnetic = checkbox_magnetic.isChecked();
+        old_orientation = checkbox_orientation.isChecked();
         old_navsat = checkbox_navsat.isChecked();
 
         // Re-enable button

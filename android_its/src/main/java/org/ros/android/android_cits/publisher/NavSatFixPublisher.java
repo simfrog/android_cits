@@ -36,6 +36,7 @@ import android.os.Looper;
 import androidx.annotation.NonNull;
 
 import android.os.SystemClock;
+import android.renderscript.RenderScript;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -60,6 +61,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import org.ros.android.android_cits.subscriber.NavSatFixSubscriber;
 import org.ros.message.Time;
 import org.ros.namespace.GraphName;
 import org.ros.node.ConnectedNode;
@@ -83,9 +85,9 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
 
     // The desired interval for location updates. Inexact. Updates may be more or less frequent.
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
     // The fastest rate for active location updates. Exact. Updates will never be more frequent than this value.
-    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+//    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 100;
 
     // Fused location provider
     private FusedLocationProviderClient mFusedLocationClient;
@@ -100,7 +102,8 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     private LatLng mCurrentLatLng;
 
     // View objects and the main activity
-    private TextView tvLocation;
+    private TextView tvPubLocation;
+//    private NavSatFixSubscriber<sensor_msgs.NavSatFix> tvSubLocation;
     private MapFragment mapFragment;
     private String mLastUpdateTime;
     private String robotName;
@@ -116,7 +119,8 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         // Get our textzone
         this.mainAct = mainAct;
         this.robotName = robotName;
-        tvLocation = (TextView) mainAct.findViewById(R.id.titleTextGPS);
+        tvPubLocation = (TextView) mainAct.findViewById(R.id.PubGPS);
+//        tvSubLocation = (TextView) mainAct.findViewById(R.id.SubGPS);
         mapFragment = (MapFragment)mainAct.getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         // Set our clients
@@ -135,9 +139,9 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
             }
         };
         // Build the location request
-        mLocationRequest = new LocationRequest()
-                .setInterval(UPDATE_INTERVAL_IN_MILLISECONDS)
-                .setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS)
+        mLocationRequest = LocationRequest.create()
+                .setInterval(1000)
+                .setFastestInterval(1000)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         // Build the location settings request object
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
@@ -152,7 +156,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         // Else we are good to display
         String lat = String.valueOf(mCurrentLocation.getLatitude());
         String lng = String.valueOf(mCurrentLocation.getLongitude());
-        tvLocation.setText("At Time: " + mLastUpdateTime + "\n" +
+        tvPubLocation.setText("At Time: " + mLastUpdateTime + "\n" +
                 "Latitude: " + lat + "\n" +
                 "Longitude: " + lng + "\n" +
                 "Accuracy: " + mCurrentLocation.getAccuracy() + "\n" +
@@ -168,7 +172,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mCurrentLatLng));
 
-        Log.i(TAG, tvLocation.getText().toString().replace("\n", " | "));
+        Log.i(TAG, tvPubLocation.getText().toString().replace("\n", " | "));
     }
 
     private void publishMessages(Publisher publisher, List<Location> locs) {
@@ -204,7 +208,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("sensors_driver/navsatfix_publisher");
+        return GraphName.of("android_sensors_driver/navsatfix_publisher");
     }
 
     @Override
@@ -221,7 +225,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         startLocationUpdates();
         // Create our publisher
         try {
-            this.publisher = connectedNode.newPublisher( robotName + "/android" + "/fix", "sensor_msgs/NavSatFix");
+            this.publisher = connectedNode.newPublisher( "/phone" + robotName + "/android" + "/fix", "sensor_msgs/NavSatFix");
 //            mLocationCallback = new LocationCallback() {
 //                @Override
 //                public void onLocationResult(LocationResult locationResult) {
@@ -309,224 +313,3 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     }
 
 }
-
-//import android.Manifest;
-//import android.content.pm.PackageManager;
-//import android.location.Location;
-//import android.location.LocationListener;
-//import android.location.LocationManager;
-//import android.location.LocationProvider;
-//import android.location.LocationRequest;
-//import android.os.Bundle;
-//import android.os.Looper;
-//import android.util.Log;
-//
-//import androidx.core.app.ActivityCompat;
-//
-//import com.google.android.gms.location.FusedLocationProviderClient;
-//import com.google.android.gms.location.LocationCallback;
-//import com.google.android.gms.location.LocationResult;
-//import com.google.android.gms.maps.model.LatLng;
-//
-//import org.ros.message.Time;
-//import org.ros.namespace.GraphName;
-//import org.ros.node.ConnectedNode;
-//import org.ros.node.Node;
-//import org.ros.node.NodeMain;
-//import org.ros.node.topic.Publisher;
-//
-//import java.util.List;
-//
-//import sensor_msgs.NavSatFix;
-//import sensor_msgs.NavSatStatus;
-//
-///**
-// * @author chadrockey@gmail.com (Chad Rockey)
-// * @author axelfurlan@gmail.com (Axel Furlan)
-// * @author tal.regev@gmail.com  (Tal Regev)
-// */
-//public class NavSatFixPublisher implements NodeMain {
-//
-//    protected String robotName;
-//    protected NavSatThread navSatThread;
-//    protected Location location;
-////    protected NavSatListener navSatFixListener;
-//    protected Publisher<NavSatFix> publisher;
-//
-//    public NavSatFixPublisher(Location location, String robotName) {
-//        this.location = location;
-//        this.robotName = robotName;
-//    }
-//
-//    @Override
-//    public void onStart(ConnectedNode node) {
-//        try {
-//            this.publisher = node.newPublisher(robotName + "/android/fix", "sensor_msgs/NavSatFix");
-////            this.navSatFixListener = new NavSatListener(publisher);
-//            this.navSatThread = new NavSatThread(location, publisher);
-//            this.navSatThread.start();
-//        } catch (Exception e) {
-//            if (node != null) {
-////                node.getLog().fatal(e);
-//            } else {
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            // TODO: Consider calling
-//            //    ActivityCompat#requestPermissions
-//            // here to request the missing permissions, and then overriding
-//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//            //                                          int[] grantResults)
-//            // to handle the case where the user grants the permission. See the documentation
-//            // for ActivityCompat#requestPermissions for more details.
-//            return;
-//        }
-//    }
-//
-//    LocationCallback locationCallback = new LocationCallback() {
-//        @Override
-//        public void onLocationResult(LocationResult locationResult) {
-//            super.onLocationResult(locationResult);
-//
-//            List<Location> locationList = locationResult.getLocations();
-//
-//            if (locationList.size() > 0)
-//            {
-//                location = locationList.get(locationList.size()-1);
-////                currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
-//
-////                String markerSnippet = "Latitude: " + String.valueOf(location.getLatitude())
-////                        + " Longitude: " + String.valueOf(location.getLongitude());
-////                Log.d(TAG, "onLocationResult: " + markerSnippet);
-//
-////                setCurrentLocation(location, markerSnippet);
-//            }
-//        }
-//    };
-//
-//    @Override
-//    public void onShutdown(Node arg0) {
-//        if (this.navSatThread == null) {
-//            return;
-//        }
-//
-//        this.navSatThread.shutdown();
-//        try {
-//            this.navSatThread.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    @Override
-//    public void onShutdownComplete(Node arg0) {
-//    }
-//
-//    @Override
-//    public GraphName getDefaultNodeName() {
-//        return GraphName.of("android_sensors_driver/imuPublisher");
-//    }
-//
-//    @Override
-//    public void onError(Node node, Throwable throwable) {
-//    }
-//
-//    private class NavSatThread extends Thread {
-//        Location location;
-//
-//        private Publisher<NavSatFix> publisher;
-//        private Looper threadLooper;
-//
-//        private volatile byte currentStatus;
-//
-//        private NavSatThread(Location location, Publisher<NavSatFix> publisher) {
-//            this.location = location;
-//            this.publisher = publisher;
-//            this.currentStatus = NavSatStatus.STATUS_FIX;
-//        }
-//
-//        @Override
-//        public void run() {
-//            NavSatFix fix = this.publisher.newMessage();
-//            fix.getHeader().setStamp(Time.fromMillis(System.currentTimeMillis()));
-//            fix.getHeader().setFrameId("/gps");
-//
-//            fix.getStatus().setStatus(currentStatus);
-//            fix.getStatus().setService(NavSatStatus.SERVICE_GPS);
-//
-//            fix.setLatitude(location.getLatitude());
-//            fix.setLongitude(location.getLongitude());
-//            fix.setAltitude(location.getAltitude());
-//            fix.setPositionCovarianceType(NavSatFix.COVARIANCE_TYPE_APPROXIMATED);
-//            double deviation = location.getAccuracy();
-//            double covariance = deviation * deviation;
-//            double[] tmpCov = {covariance, 0, 0, 0, covariance, 0, 0, 0, covariance};
-//            fix.setPositionCovariance(tmpCov);
-//            publisher.publish(fix);
-//        }
-//
-//        public void shutdown() {
-////            this.locationManager.removeUpdates(this.navSatListener);
-//            if (threadLooper != null) {
-//                threadLooper.quit();
-//            }
-//        }
-//    }
-
-//    private class NavSatListener {
-//
-//        private Publisher<NavSatFix> publisher;
-//
-//        private volatile byte currentStatus;
-//
-//        private NavSatListener(Publisher<NavSatFix> publisher) {
-//            this.publisher = publisher;
-//            this.currentStatus = NavSatStatus.STATUS_FIX; // Default to fix until we are told otherwise.
-//        }
-//
-//        @Override
-//        public void onLocationChanged(Location location) {
-//            NavSatFix fix = this.publisher.newMessage();
-//            fix.getHeader().setStamp(Time.fromMillis(System.currentTimeMillis()));
-//            fix.getHeader().setFrameId("/gps");
-//
-//            fix.getStatus().setStatus(currentStatus);
-//            fix.getStatus().setService(NavSatStatus.SERVICE_GPS);
-//
-//            fix.setLatitude(location.getLatitude());
-//            fix.setLongitude(location.getLongitude());
-//            fix.setAltitude(location.getAltitude());
-//            fix.setPositionCovarianceType(NavSatFix.COVARIANCE_TYPE_APPROXIMATED);
-//            double deviation = location.getAccuracy();
-//            double covariance = deviation * deviation;
-//            double[] tmpCov = {covariance, 0, 0, 0, covariance, 0, 0, 0, covariance};
-//            fix.setPositionCovariance(tmpCov);
-//            publisher.publish(fix);
-//        }
-//
-//        @Override
-//        public void onProviderDisabled(String provider) {
-//        }
-//
-//        @Override
-//        public void onProviderEnabled(String provider) {
-//        }
-//
-//        @Override
-//        public void onStatusChanged(String provider, int status, Bundle extras) {
-//            switch (status) {
-//                case LocationProvider.OUT_OF_SERVICE:
-//                    currentStatus = NavSatStatus.STATUS_NO_FIX;
-//                    break;
-//                case LocationProvider.TEMPORARILY_UNAVAILABLE:
-//                    currentStatus = NavSatStatus.STATUS_NO_FIX;
-//                    break;
-//                case LocationProvider.AVAILABLE:
-//                    currentStatus = NavSatStatus.STATUS_FIX;
-//                    break;
-//            }
-//        }
-//    }
-//}
