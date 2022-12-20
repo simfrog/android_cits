@@ -176,7 +176,7 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     }
 
     private void publishMessages(Publisher publisher, List<Location> locs) {
-        // Check that we have a location
+        // Check that we have a locationf
         if (locs == null || locs.size() < 1)
             return;
         // We are good, lets publish
