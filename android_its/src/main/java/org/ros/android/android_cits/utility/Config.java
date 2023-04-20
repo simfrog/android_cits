@@ -8,8 +8,7 @@ import android.widget.EditText;
 import org.ros.address.InetAddressFactory;
 import org.ros.android.android_cits.MainActivity;
 import org.ros.android.android_cits.R;
-import org.ros.android.android_cits.publisher.NavSatFixPublisher;
-import org.ros.android.android_cits.publisher.OrientationPublisher;
+import org.ros.android.android_cits.publisher.SensorPublisher;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
 
@@ -23,16 +22,19 @@ public class Config {
     protected NodeMainExecutor nodeMainExecutor;
 
     protected EditText robot_name;
-    protected CheckBox checkbox_orientation;
-    protected CheckBox checkbox_navsat;
+    protected CheckBox checkbox_publish;
+//    protected CheckBox checkbox_orientation;
+//    protected CheckBox checkbox_navsat;
     protected Button button_config;
 
     protected String old_robot_name;
-    protected boolean old_orientation;
-    protected boolean old_navsat;
+    protected boolean old_publisher;
+//    protected boolean old_orientation;
+//    protected boolean old_navsat;
 
-    protected OrientationPublisher pub_orientation;
-    protected NavSatFixPublisher pub_navsat2;
+    protected SensorPublisher pub_sensor;
+//    protected Publisher pub_orientation;
+//    protected NavSatFixPublisher pub_navsat2;
 
     protected SensorManager mSensorManager;
 
@@ -44,8 +46,9 @@ public class Config {
 
         // Load our references
         robot_name = (EditText) mainActivity.findViewById(R.id.robot_name);
-        checkbox_orientation = (CheckBox) mainActivity.findViewById(R.id.checkbox_orientation);
-        checkbox_navsat = (CheckBox) mainActivity.findViewById(R.id.checkbox_navsat);
+        checkbox_publish = (CheckBox) mainActivity.findViewById(R.id.checkbox_publisher);
+//        checkbox_orientation = (CheckBox) mainActivity.findViewById(R.id.checkbox_orientation);
+//        checkbox_navsat = (CheckBox) mainActivity.findViewById(R.id.checkbox_navsat);
         button_config = (Button) mainActivity.findViewById(R.id.config_sensor);
 
         // Load old variables, booleans default to false
@@ -76,44 +79,66 @@ public class Config {
 
         // If we have a new name, then we need to redo all publishing nodes
         if(!old_robot_name.equals(robot_name_text)) {
-            nodeMainExecutor.shutdownNodeMain(pub_orientation);
-            nodeMainExecutor.shutdownNodeMain(pub_navsat2);
-            old_orientation = false;
-            old_navsat = false;
+            nodeMainExecutor.shutdownNodeMain(pub_sensor);
+//            nodeMainExecutor.shutdownNodeMain(pub_orientation);
+//            nodeMainExecutor.shutdownNodeMain(pub_navsat2);
+            old_publisher = false;
+//            old_orientation = false;
+//            old_navsat = false;
         }
 
         // Orientation node startup
-        if(checkbox_orientation.isChecked() != old_orientation && checkbox_orientation.isChecked()) {
+        if(checkbox_publish.isChecked() != old_publisher && checkbox_publish.isChecked()) {
             NodeConfiguration nodeConfiguration3 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration3.setMasterUri(masterURI);
-            nodeConfiguration3.setNodeName("orientation_driver" + robot_name_text);
-            this.pub_orientation = new OrientationPublisher(mSensorManager, sensorDelay, robot_name_text);
-            nodeMainExecutor.execute(this.pub_orientation, nodeConfiguration3);
+            nodeConfiguration3.setNodeName("sensor_driver" + robot_name_text);
+//            nodeConfiguration3.setNodeName("orientation_driver" + robot_name_text);
+            this.pub_sensor = new SensorPublisher(mainActivity, mSensorManager, sensorDelay, robot_name_text);
+            nodeMainExecutor.execute(this.pub_sensor, nodeConfiguration3);
+//            this.pub_orientation = new Publisher(mSensorManager, sensorDelay, robot_name_text);
+//            nodeMainExecutor.execute(this.pub_orientation, nodeConfiguration3);
         }
         // Orientation node shutdown
-        else if(checkbox_orientation.isChecked() != old_orientation) {
-            nodeMainExecutor.shutdownNodeMain(pub_orientation);
-            pub_orientation = null;
+        else if(checkbox_publish.isChecked() != old_publisher) {
+            nodeMainExecutor.shutdownNodeMain(pub_sensor);
+            pub_sensor = null;
+//            nodeMainExecutor.shutdownNodeMain(pub_orientation);
+//            pub_orientation = null;
         }
 
-        // Navigation satellite node startup
-        if(checkbox_navsat.isChecked() != old_navsat && checkbox_navsat.isChecked()) {
-            NodeConfiguration nodeConfiguration5 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-            nodeConfiguration5.setMasterUri(masterURI);
-            nodeConfiguration5.setNodeName("navsatfix_driver" + robot_name_text);
-            this.pub_navsat2 = new NavSatFixPublisher(mainActivity, robot_name_text);
-            nodeMainExecutor.execute(this.pub_navsat2, nodeConfiguration5);
-        }
-        // Navigation satellite node shutdown
-        else if(checkbox_navsat.isChecked() != old_navsat) {
-            nodeMainExecutor.shutdownNodeMain(pub_navsat2);
-            pub_navsat2 = null;
-        }
+//        // Orientation node startup
+//        if(checkbox_orientation.isChecked() != old_orientation && checkbox_orientation.isChecked()) {
+//            NodeConfiguration nodeConfiguration3 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+//            nodeConfiguration3.setMasterUri(masterURI);
+//            nodeConfiguration3.setNodeName("orientation_driver" + robot_name_text);
+//            this.pub_orientation = new OrientationPublisher(mSensorManager, sensorDelay, robot_name_text);
+//            nodeMainExecutor.execute(this.pub_orientation, nodeConfiguration3);
+//        }
+//        // Orientation node shutdown
+//        else if(checkbox_orientation.isChecked() != old_orientation) {
+//            nodeMainExecutor.shutdownNodeMain(pub_orientation);
+//            pub_orientation = null;
+//        }
+
+//        // Navigation satellite node startup
+//        if(checkbox_navsat.isChecked() != old_navsat && checkbox_navsat.isChecked()) {
+//            NodeConfiguration nodeConfiguration5 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+//            nodeConfiguration5.setMasterUri(masterURI);
+//            nodeConfiguration5.setNodeName("navsatfix_driver" + robot_name_text);
+//            this.pub_navsat2 = new NavSatFixPublisher(mainActivity, robot_name_text);
+//            nodeMainExecutor.execute(this.pub_navsat2, nodeConfiguration5);
+//        }
+//        // Navigation satellite node shutdown
+//        else if(checkbox_navsat.isChecked() != old_navsat) {
+//            nodeMainExecutor.shutdownNodeMain(pub_navsat2);
+//            pub_navsat2 = null;
+//        }
 
         // Finally, update our old states
         old_robot_name = robot_name.getText().toString();
-        old_orientation = checkbox_orientation.isChecked();
-        old_navsat = checkbox_navsat.isChecked();
+        old_publisher = checkbox_publish.isChecked();
+//        old_orientation = checkbox_orientation.isChecked();
+//        old_navsat = checkbox_navsat.isChecked();
 
         // Re-enable button
         button_config.setEnabled(true);

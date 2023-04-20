@@ -49,6 +49,12 @@
                 <action android:name="org.ros.android.NodeMainExecutorService" />
             </intent-filter>
         </service>
+
+        <service
+            android:name="mad.location.manager.lib.Services.KalmanLocationService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false" />
     </application>
 
 </manifest>

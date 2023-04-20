@@ -41,6 +41,7 @@ import org.ros.node.NodeMainExecutor;
  * @author axelfurlan@gmail.com (Axel Furlan)
  */
 public class MainActivity extends RosActivity {
+    
     protected Config config;
     protected Button button_config;
 

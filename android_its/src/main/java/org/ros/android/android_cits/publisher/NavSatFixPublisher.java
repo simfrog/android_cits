@@ -80,14 +80,10 @@ import org.ros.android.android_cits.R;
 
 public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
-    // "Constant used in the location settings dialog."
-    // Not sure why this is needed... -pgeneva
     private static final int REQUEST_CHECK_SETTINGS = 0x1;
 
-    // The desired interval for location updates. Inexact. Updates may be more or less frequent.
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
-    // The fastest rate for active location updates. Exact. Updates will never be more frequent than this value.
-//    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 100;
+    private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
 
     // Fused location provider
     private FusedLocationProviderClient mFusedLocationClient;
@@ -103,7 +99,6 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
     // View objects and the main activity
     private TextView tvPubLocation;
-//    private NavSatFixSubscriber<sensor_msgs.NavSatFix> tvSubLocation;
     private MapFragment mapFragment;
     private String mLastUpdateTime;
     private String robotName;
@@ -111,21 +106,23 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     private MainActivity mainAct;
 
     // Our ROS publish node
+//    private NavSatFixSubscriber<sensor_msgs.NavSatFix> tvSubLocation;
     private Publisher<NavSatFix> publisher;
     private NavSatFix fix;
 
 
     public NavSatFixPublisher(MainActivity mainAct, String robotName) {
-        // Get our textzone
         this.mainAct = mainAct;
         this.robotName = robotName;
         tvPubLocation = (TextView) mainAct.findViewById(R.id.PubGPS);
 //        tvSubLocation = (TextView) mainAct.findViewById(R.id.SubGPS);
         mapFragment = (MapFragment)mainAct.getFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
         // Set our clients
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(mainAct);
         mSettingsClient = LocationServices.getSettingsClient(mainAct);
+
         // Create a location callback
         mLocationCallback = new LocationCallback() {
             @Override
@@ -138,11 +135,13 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
                 updateUI();
             }
         };
+
         // Build the location request
         mLocationRequest = LocationRequest.create()
-                .setInterval(1000)
-                .setFastestInterval(1000)
+                .setInterval(UPDATE_INTERVAL_IN_MILLISECONDS)
+                .setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
         // Build the location settings request object
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         builder.addLocationRequest(mLocationRequest);
@@ -150,10 +149,9 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     }
 
     private void updateUI() {
-        // Return if we do not have a position
         if (mCurrentLocation == null)
             return;
-        // Else we are good to display
+
         String lat = String.valueOf(mCurrentLocation.getLatitude());
         String lng = String.valueOf(mCurrentLocation.getLongitude());
         tvPubLocation.setText("At Time: " + mLastUpdateTime + "\n" +
@@ -176,10 +174,9 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
     }
 
     private void publishMessages(Publisher publisher, List<Location> locs) {
-        // Check that we have a locationf
         if (locs == null || locs.size() < 1)
             return;
-        // We are good, lets publish
+
         for (Location location : locs) {
             this.fix = this.publisher.newMessage();
             long time_delta_millis = System.currentTimeMillis() - SystemClock.uptimeMillis();
@@ -226,22 +223,6 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
         // Create our publisher
         try {
             this.publisher = connectedNode.newPublisher( "/phone" + robotName + "/android" + "/fix", "sensor_msgs/NavSatFix");
-//            mLocationCallback = new LocationCallback() {
-//                @Override
-//                public void onLocationResult(LocationResult locationResult) {
-//                    super.onLocationResult(locationResult);
-//                    mCurrentLocation = locationResult.getLastLocation();
-//                    mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-
-//                    LatLng currentLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-//                    MarkerOptions markerOptions = new MarkerOptions();
-//                    markerOptions.position(currentLatLng);
-//                    markerOptions.draggable(true);
-
-//                    publishMessages(publisher, locationResult.getLocations());
-//                    updateUI();
-//                }
-//            };
         } catch (Exception e) {
             if (connectedNode != null) {
 //                connectedNode.getLog().fatal(e);
@@ -261,11 +242,6 @@ public class NavSatFixPublisher implements NodeMain, OnMapReadyCallback {
 
     @Override
     public void onError(Node node, Throwable throwable) {}
-
-    //===========================================================================================
-    //===========================================================================================
-    //===========================================================================================
-    //===========================================================================================
 
 
     private void startLocationUpdates() {
